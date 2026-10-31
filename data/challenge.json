@@ -1,0 +1,22 @@
+{
+  "routeGpx": "trasa.gpx",
+  "start":  { "name": "Nebeská Rybná, kostel",   "lat": 50.18885, "lon": 16.41996, "radiusM": 150 },
+  "peklo":  { "name": "Peklo, Bartoňova útulna", "lat": 50.37925, "lon": 16.18723, "radiusM": 150 },
+  "finish": { "name": "Vyhlídka Český ráj",      "lat": 50.46670, "lon": 15.28963, "radiusM": 150 },
+  "limits": {
+    "corridorM": 150,
+    "maxPointIntervalS": 60,
+    "pauseMaxMoveM": 50,
+    "shortDetourMaxDurationMin": 15,
+    "shortDetourMaxLengthM": 1000,
+    "shortDetourMaxDistanceM": 500,
+    "minCoveragePercent": 90,
+    "maxUncoveredStretchM": 500,
+    "suspiciousSpeedKmh": 18,
+    "suspiciousWindowM": 3000,
+    "vehicleSpeedKmh": 30,
+    "vehicleWindowM": 500,
+    "similarAttemptToleranceS": 120,
+    "futureToleranceMin": 60
+  }
+}

@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5BDABD29-5BAE-4992-BA3B-D04744F4E133}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NebePekloRaj.GpxValidation", "src\NebePekloRaj.GpxValidation\NebePekloRaj.GpxValidation.csproj", "{FC219EFD-AD54-4D28-9622-ADF6AF855E7C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F06E6B4D-00E6-4F8E-99E1-01F76A3AD592}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NebePekloRaj.GpxValidation.Tests", "tests\NebePekloRaj.GpxValidation.Tests\NebePekloRaj.GpxValidation.Tests.csproj", "{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FC219EFD-AD54-4D28-9622-ADF6AF855E7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC219EFD-AD54-4D28-9622-ADF6AF855E7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC219EFD-AD54-4D28-9622-ADF6AF855E7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC219EFD-AD54-4D28-9622-ADF6AF855E7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FC219EFD-AD54-4D28-9622-ADF6AF855E7C} = {5BDABD29-5BAE-4992-BA3B-D04744F4E133}
+		{EB0CF84E-65DB-4C82-A842-FB3C7C2B65AE} = {F06E6B4D-00E6-4F8E-99E1-01F76A3AD592}
+	EndGlobalSection
+EndGlobal

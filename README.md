@@ -20,6 +20,31 @@ Hlavička a patička jsou v každé stránce zkopírované. Při změně menu je
 
 Mapa a výškový profil na `trasa.html` jsou SVG vygenerované z předběžného GPX. Po finální úpravě trasy je potřeba je vygenerovat znovu.
 
+## GPX parser
+
+Kontrola nahraných pokusů je C# knihovna (.NET 8), oddělená od webu:
+
+| Složka | Obsah |
+|---|---|
+| `src/NebePekloRaj.GpxValidation` | načtení GPX, kontroly pravidel, výpočet časů |
+| `tests/NebePekloRaj.GpxValidation.Tests` | unit testy, i na předběžné trase |
+| `data/trasa.gpx` | oficiální trasa (zatím předběžná) |
+| `data/challenge.json` | souřadnice startu, Pekla a cíle, zóny a všechny limity |
+
+Posun cíle nebo nová trasa = upravit `data/challenge.json` nebo nahradit `data/trasa.gpx`, kód se nemění. Zadání kontrol je v dokumentu [GPX parser – zadání](https://claude.ai/artifact/HLPhBwi1GfbCPqk4sHFbwi).
+
+Použití:
+
+```csharp
+var (config, route) = ChallengeConfig.LoadWithRoute("data/challenge.json");
+var validator = new AttemptValidator(config, route);
+var result = validator.Validate([File.OpenRead("hodinky.gpx"), File.OpenRead("telefon.gpx")], RouteVariant.Full);
+// result.Verdict: Accepted / ManualReview / Rejected
+// result.Elapsed, result.Stages, result.Findings, result.Fingerprint
+```
+
+Testy: `dotnet test` v kořeni repa.
+
 ## Jak vložit Tally formulář
 
 1. Založ si účet na [tally.so](https://tally.so) (zdarma).
