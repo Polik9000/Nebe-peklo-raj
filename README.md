@@ -2,7 +2,23 @@
 
 FKT výzva z Nebeské Rybné přes Peklo do Českého ráje (cca 163 km). Spuštění květen 2027.
 
-Zatím tu je statická landing page s waitlistem (`index.html` + `assets/styles.css`). Později web poběží na ASP.NET a tahle stránka se přesune do `wwwroot`.
+Statický web (čisté HTML/CSS, bez buildu), hostovaný přes GitHub Pages. Později poběží na ASP.NET a soubory se přesunou do `wwwroot`.
+
+## Stránky
+
+| Soubor | Obsah |
+|---|---|
+| `index.html` | úvod, varianty, jak to funguje, časté otázky, waitlist (Tally) |
+| `trasa.html` | body trasy se souřadnicemi, mapa a výškový profil, etapy, koridor, bezpečnost |
+| `pravidla.html` | pravidla v1: čas, styly, pauzy, GPX, všechny otázky |
+| `zebricek.html` | připravujeme (spuštění květen 2027) |
+| `kontakt.html` | kdo za tím stojí, kontakt, info pro média |
+| `ochrana-udaju.html` | zásady ochrany osobních údajů k waitlistu |
+| `404.html` | stránka nenalezena |
+
+Hlavička a patička jsou v každé stránce zkopírované. Při změně menu je potřeba upravit všechny stránky.
+
+Mapa a výškový profil na `trasa.html` jsou SVG vygenerované z předběžného GPX. Po finální úpravě trasy je potřeba je vygenerovat znovu.
 
 ## Jak vložit Tally formulář
 
@@ -21,4 +37,4 @@ Repo → **Settings** → **Pages** → *Source: Deploy from a branch* → věte
 
 ## Design
 
-Styl je schválně neutrální. Barvy, písma a rozestupy jsou jako proměnné v `:root` na začátku `assets/styles.css`, takže design z Figmy se dá převzít hlavně tam. Třídy v HTML jsou pojmenované podle obsahu (`hero`, `route`, `facts`, …).
+Styl je schválně neutrální. Všechny barvy, písma, velikosti, rozestupy, zaoblení a stíny jsou proměnné v `:root` na začátku `assets/styles.css`. Návod, kterou proměnnou změnit podle Figmy, je v komentáři na začátku souboru. Třídy v HTML jsou pojmenované podle obsahu (`hero`, `route`, `variants`, `card`, …).
