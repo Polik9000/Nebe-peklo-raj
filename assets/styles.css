@@ -104,3 +104,27 @@ a { color: var(--color-accent); }
 /* Patička */
 .footer { padding: var(--space-m) 0; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 0.9rem; }
 .form-embed { margin: var(--space-m) 0; }
+
+/* Varianty, kroky, otázky */
+.subsection__title { font-size: 1.25rem; margin-top: var(--space-m); }
+.variants { list-style: none; margin: 0 0 var(--space-s); padding: 0; display: grid; gap: var(--space-s); }
+.variants__item {
+  display: flex; flex-direction: column;
+  padding: var(--space-s);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+.variants__name { font-size: 1.25rem; }
+.variants__route, .variants__length { color: var(--color-muted); }
+.note { font-size: 0.95rem; color: var(--color-muted); }
+
+.steps { margin: 0; padding-left: 1.25rem; display: grid; gap: var(--space-s); }
+
+.faq { margin: 0; }
+.faq__q { font-weight: 600; margin-top: var(--space-s); }
+.faq__a { margin: 0.25rem 0 0; color: var(--color-muted); }
+
+@media (min-width: 720px) {
+  .variants { grid-template-columns: repeat(3, 1fr); }
+}
