@@ -12,7 +12,7 @@ Zatím tu je statická landing page s waitlistem (`index.html` + `assets/styles.
 4. **Publish** → **Share** → **Embed** → zvol **Standard** a zapni *Transparent background* a *Dynamic height*.
 5. Zkopíruj kód (`<iframe …>` a `<script …>`).
 6. V `index.html` najdi komentář `TALLY` a celý blok `<div class="form-placeholder">…</div>` nahraď zkopírovaným kódem.
-7. V `index.html` doplň do GDPR poznámky svůj jméno správce (místo `JMÉNO PŘÍJMENÍ`).
+7. V `index.html` doplň do GDPR poznámky své jméno (místo `JMÉNO PŘÍJMENÍ`).
 
 Odpovědi pak najdeš v Tally v záložce **Submissions** a jdou exportovat do CSV.
 
