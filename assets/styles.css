@@ -103,3 +103,4 @@ a { color: var(--color-accent); }
 
 /* Patička */
 .footer { padding: var(--space-m) 0; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 0.9rem; }
+.form-embed { margin: var(--space-m) 0; }
