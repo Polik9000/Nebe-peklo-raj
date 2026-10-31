@@ -1,0 +1,105 @@
+/*
+  Nebe Peklo Ráj – základní styl.
+  Úmyslně neutrální. Barvy, písmo a rozestupy jsou v proměnných níže,
+  takže design z Figmy jde převzít hlavně úpravou :root.
+*/
+
+:root {
+  --color-bg: #ffffff;
+  --color-bg-alt: #f4f4f2;
+  --color-text: #1c1c1c;
+  --color-muted: #66665f;
+  --color-accent: #2f5d50;
+  --color-accent-text: #ffffff;
+  --color-border: #deded8;
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-body);
+
+  --space-xs: 0.5rem;
+  --space-s: 1rem;
+  --space-m: 2rem;
+  --space-l: 4rem;
+
+  --radius: 6px;
+  --max-width: 60rem;
+  --max-width-narrow: 38rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+h1, h2, h3 { font-family: var(--font-heading); line-height: 1.15; margin: 0 0 var(--space-s); }
+p { margin: 0 0 var(--space-s); }
+a { color: var(--color-accent); }
+
+.container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--space-s); }
+.container--narrow { max-width: var(--max-width-narrow); }
+
+/* Hero */
+.hero { padding: var(--space-l) 0; background: var(--color-bg-alt); }
+.hero__eyebrow { color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
+.hero__title { font-size: clamp(2.5rem, 8vw, 4.5rem); }
+.hero__lead { font-size: 1.25rem; max-width: 36rem; }
+
+.button {
+  display: inline-block;
+  margin-top: var(--space-xs);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.button:hover { opacity: 0.9; }
+
+/* Sekce */
+.section { padding: var(--space-l) 0; }
+.section--alt { background: var(--color-bg-alt); }
+.section__title { font-size: 1.75rem; }
+
+/* Trasa */
+.route { list-style: none; margin: 0 0 var(--space-m); padding: 0; display: grid; gap: var(--space-s); }
+.route__stop {
+  display: flex; flex-direction: column;
+  padding: var(--space-s);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+.route__label { color: var(--color-muted); font-size: 0.85rem; }
+.route__name { font-size: 1.5rem; }
+.route__place { color: var(--color-muted); }
+
+.facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-s); }
+.facts__item { display: flex; flex-direction: column; }
+.facts__item strong { font-size: 1.25rem; }
+.facts__item span { color: var(--color-muted); font-size: 0.9rem; }
+
+@media (min-width: 720px) {
+  .route { grid-template-columns: repeat(3, 1fr); }
+  .facts { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Waitlist */
+.form-placeholder {
+  margin: var(--space-m) 0;
+  padding: var(--space-m);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--color-muted);
+}
+.gdpr { font-size: 0.85rem; color: var(--color-muted); }
+
+/* Patička */
+.footer { padding: var(--space-m) 0; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 0.9rem; }
