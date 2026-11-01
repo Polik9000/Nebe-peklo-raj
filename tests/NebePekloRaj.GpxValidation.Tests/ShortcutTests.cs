@@ -53,7 +53,10 @@ public class ShortcutTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
 
-        Assert.Equal(Verdict.Accepted, r.Verdict);
+        // A record always goes to a person, but nothing else is flagged.
+        Assert.Equal(Verdict.ManualReview, r.Verdict);
+        Assert.Contains(r.Findings, f => f.Code == FindingCode.RecordCandidate);
+        Assert.Empty(Review.Problems(r));
         Assert.DoesNotContain(r.Findings, f => f.Code == FindingCode.Shortcut);
     }
 
@@ -64,7 +67,7 @@ public class ShortcutTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
 
-        Assert.Equal(Verdict.Accepted, r.Verdict);
+        Assert.Empty(Review.Problems(r));
         var f = Assert.Single(r.Findings, f => f.Code == FindingCode.Shortcut);
         Assert.Equal(Severity.Info, f.Severity);
         Assert.InRange(r.ShortcutSavedM, 150, 350);
@@ -106,5 +109,39 @@ public class ShortcutTests
 
         Assert.Equal(Verdict.Rejected, r.Verdict);
         Assert.True(r.Findings.Any(f => f.Code == FindingCode.OffRouteShortcut), string.Join("\n", r.Findings.Select(f => f.Message)));
+    }
+
+    [Fact]
+    public void One_big_cut_needs_manual_review_for_a_record()
+    {
+        var cfg = Config with { Limits = new ValidationLimits { RecordShortcutM = 150 } };
+        var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2027, 6, 1, 0, 0, 0, TimeSpan.Zero)));
+        var b = Walker().Walk(R(0, 3_000), Kmh).Walk(At(3_000, 200), Kmh).Walk(R(3_500, Route.LengthM), Kmh);
+
+        var record = validator.Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
+        var normal = validator.Validate([b.Build()], RouteVariant.Full);
+
+        Assert.Contains(record.Findings, f => f.Code == FindingCode.Shortcut && f.Severity == Severity.ManualReview);
+        Assert.Equal(Verdict.Accepted, normal.Verdict);
+    }
+
+    [Fact]
+    public void Shortening_detour_with_a_note_goes_to_manual_review()
+    {
+        // Around hairpin 2 outside the corridor: leaves at route km 4.8, rejoins at km 6.0, walks about 1.1 km.
+        // Coverage is relaxed so that only the detour decides.
+        var cfg = Config with { Limits = new ValidationLimits { MinCoveragePercent = 50 } };
+        var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2027, 6, 1, 0, 0, 0, TimeSpan.Zero)));
+        var b = Walker().Walk(R(0, 4_800), Kmh)
+            .Walk([At(4_500, 570), At(5_000, 570), At(5_000, 400)], Kmh)
+            .Walk(R(6_000, Route.LengthM), Kmh);
+
+        var silent = validator.Validate([b.Build()], RouteVariant.Full);
+        var noted = validator.Validate([b.Build()], RouteVariant.Full, new ValidationOptions(DetourExplained: true));
+
+        Assert.Equal(Verdict.Rejected, silent.Verdict);
+        Assert.True(silent.Findings.Any(f => f.Code == FindingCode.OffRouteShortcut), Review.Describe(silent));
+        Assert.True(noted.Verdict == Verdict.ManualReview, Review.Describe(noted));
+        Assert.Contains(noted.Findings, f => f.Code == FindingCode.OffRouteShortcut && f.Severity == Severity.ManualReview);
     }
 }

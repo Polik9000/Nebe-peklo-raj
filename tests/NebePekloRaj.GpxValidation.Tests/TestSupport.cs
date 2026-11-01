@@ -160,6 +160,15 @@ public static class RealRoute
     public static RouteModel Route => Loaded.Value.Route;
 }
 
+public static class Review
+{
+    /// <summary>Findings that need a person, apart from the record approval every record gets.</summary>
+    public static List<Finding> Problems(ValidationResult r) =>
+        r.Findings.Where(f => f.Severity != Severity.Info && f.Code != FindingCode.RecordCandidate).ToList();
+
+    public static string Describe(ValidationResult r) => string.Join("\n", r.Findings.Select(f => f.Message));
+}
+
 public static class Approx
 {
     public static void Near(double expected, double actual, double tolerance) =>

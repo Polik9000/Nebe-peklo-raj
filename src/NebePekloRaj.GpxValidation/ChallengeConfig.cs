@@ -33,7 +33,25 @@ public sealed record ValidationLimits
     public double SuspiciousWindowM { get; init; } = 3000;
     public double VehicleSpeedKmh { get; init; } = 30;
     public double VehicleWindowM { get; init; } = 500;
+    /// <summary>A stretch this many times faster than the runner's own usual pace goes to manual review (a bike).</summary>
+    public double OwnPaceFactor { get; init; } = 2.0;
+    /// <summary>The own-pace check only flags stretches faster than this.</summary>
+    public double OwnPaceMinKmh { get; init; } = 12;
+    /// <summary>For a record, one shortcut saving at least this much goes to manual review.</summary>
+    public double RecordShortcutM { get; init; } = 400;
+    /// <summary>For a record, a recording gap at least this long goes to manual review (where did they sleep?).</summary>
+    public double RecordPauseReviewMin { get; init; } = 30;
     public double SimilarAttemptToleranceS { get; init; } = 120;
+    /// <summary>Route bin for comparing the shape of two records.</summary>
+    public double ShapeBinM { get; init; } = 250;
+    /// <summary>Two records match in a bin when their splits differ at most this much…</summary>
+    public double CopyTimeToleranceS { get; init; } = 10;
+    /// <summary>…and their positions at most this much.</summary>
+    public double CopyDistanceToleranceM { get; init; } = 15;
+    /// <summary>Share of matching bins (0–100) from which a record looks copied.</summary>
+    public double CopyMatchPercent { get; init; } = 90;
+    /// <summary>Two files recorded at the same time must not be further apart than this.</summary>
+    public double FilesMaxApartM { get; init; } = 300;
     public double FutureToleranceMin { get; init; } = 60;
 }
 

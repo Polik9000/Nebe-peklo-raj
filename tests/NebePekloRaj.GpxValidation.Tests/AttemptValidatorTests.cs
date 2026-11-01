@@ -402,7 +402,7 @@ public class AttemptValidatorTests
     }
 
     [Fact]
-    public void Attempt_date_comes_from_first_point_and_picks_rules_version()
+    public void Attempt_date_is_leaving_the_start_zone_and_picks_rules_version()
     {
         var cfg = Config with
         {
@@ -411,14 +411,29 @@ public class AttemptValidatorTests
         };
         var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2028, 1, 1, 0, 0, 0, TimeSpan.Zero)));
 
-        // Starts 31 May 23:30 Czech time (21:30 UTC) and finishes on 1 June: judged by version 1.
+        // Leaves the start 31 May 23:40 Czech time (21:40 UTC) and finishes on 1 June: judged by version 1.
         var t = new DateTimeOffset(2027, 5, 31, 21, 30, 0, TimeSpan.Zero);
-        var may = validator.Validate([new TrackBuilder(At(0), t).Stand(TimeSpan.FromMinutes(40)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
-        var june = validator.Validate([new TrackBuilder(At(0), t.AddDays(1)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+        var may = validator.Validate([new TrackBuilder(At(0), t).Stand(TimeSpan.FromMinutes(10)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+        // Watch switched on in May, but the runner leaves the start after midnight: version 2.
+        var early = validator.Validate([new TrackBuilder(At(0), t).Stand(TimeSpan.FromMinutes(40)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
 
-        Assert.Equal(t, may.AttemptDateUtc);
+        Assert.Equal(may.StartUtc, may.AttemptDateUtc);
         Assert.Equal("1", may.RulesVersion);
-        Assert.Equal("2", june.RulesVersion);
+        Assert.Equal(early.StartUtc, early.AttemptDateUtc);
+        Assert.Equal("2", early.RulesVersion);
+    }
+
+    [Fact]
+    public void Switching_the_watch_on_early_does_not_get_around_the_launch_date()
+    {
+        var cfg = Config with { AcceptFrom = new DateOnly(2027, 5, 1) };
+        var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2028, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        // On 30 April 21:00 UTC (23:00 Czech), leaves the start at 22:30 UTC = 1 May 00:30 Czech.
+        var t = new DateTimeOffset(2027, 4, 30, 21, 0, 0, TimeSpan.Zero);
+
+        var r = validator.Validate([new TrackBuilder(At(0), t).Stand(TimeSpan.FromMinutes(90)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+
+        Assert.False(Has(r, FindingCode.BeforeLaunch), Review.Describe(r));
     }
 
     [Fact]

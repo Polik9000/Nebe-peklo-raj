@@ -50,7 +50,8 @@ public sealed class AttemptValidator
         var result = ValidateVariant(files, variant, options);
         if (variant == RouteVariant.Full && result.Verdict == Verdict.Rejected)
         {
-            var stage1 = ValidateVariant(files, RouteVariant.Stage1, options);
+            // IsRecordCandidate is about the full-route time; Stage 1 is asked through IsRecordTime.
+            var stage1 = ValidateVariant(files, RouteVariant.Stage1, options with { IsRecordCandidate = false });
             if (stage1.Verdict != Verdict.Rejected)
                 result = result with { Stage1Fallback = stage1 };
         }
@@ -65,21 +66,28 @@ public sealed class AttemptValidator
             return Fail(variant, "", findings, 0);
 
         var fingerprint = TrackFingerprint.Compute(points);
-        var attemptDate = points[0].Time;
-        var rules = RulesFor(attemptDate);
         CheckFuture(points, findings);
-        CheckLaunch(attemptDate, findings);
-        if (files.Count(f => f.Points.Count > 0) > 1)
+        int fileCount = files.Count(f => f.Points.Count > 0);
+        if (fileCount > 1)
+        {
             findings.Add(new Finding(FindingCode.MultipleFiles, Severity.ManualReview,
-                $"Záznam je složený z {files.Count(f => f.Points.Count > 0)} souborů. Pravidla chtějí ruční schválení."));
+                $"Záznam je složený z {fileCount} souborů. Pravidla chtějí ruční schválení."));
+            CheckFilesAgree(files, findings);
+        }
         points = RemoveSpikes(points, findings);
 
         var checkpoints = CheckpointsFor(variant);
         var zones = FindZoneVisits(points, checkpoints, findings);
         if (zones is null)
         {
-            CheckDuplicates(fingerprint, null, null, options.KnownAttempts, findings);
-            return Fail(variant, fingerprint, findings, points.Count) with { AttemptDateUtc = attemptDate, RulesVersion = rules };
+            // Without a start there is no departure; the first point is the best guess.
+            var firstDate = points[0].Time;
+            CheckLaunch(firstDate, findings);
+            CheckDuplicates(fingerprint, null, null, null, options.KnownAttempts, findings);
+            return Fail(variant, fingerprint, findings, points.Count) with
+            {
+                AttemptDateUtc = firstDate, RulesVersion = RulesFor(firstDate),
+            };
         }
 
         var (departure, arrivals) = zones.Value;
@@ -87,18 +95,12 @@ public sealed class AttemptValidator
         double startAlong = AlongOf(checkpoints[0].Position, 0);
         double endAlong = AlongOf(checkpoints[^1].Position, _route.LengthM);
 
-        var analysis = Analyze(slice, startAlong, findings);
-        CheckDensity(slice, findings);
-        CheckGaps(slice, analysis, findings);
-        CheckDetours(slice, analysis, findings);
-        double shortcutSaved = CheckShortcuts(slice, analysis, options.IsRecordCandidate, findings);
-        CheckSpeed(slice, analysis, findings);
-        double coverage = CheckCoverage(analysis, startAlong + checkpoints[0].RadiusM,
-            endAlong - checkpoints[^1].RadiusM, findings);
-
+        // The attempt starts when the runner leaves the start zone, not when the watch was switched on.
         var startUtc = points[departure].Time;
         var finishUtc = points[arrivals[^1]].Time;
-        CheckDuplicates(fingerprint, startUtc, finishUtc, options.KnownAttempts, findings);
+        var attemptDate = startUtc;
+        var rules = RulesFor(attemptDate);
+        CheckLaunch(attemptDate, findings);
 
         // Each stage runs like a standalone attempt: from leaving one zone to entering the next.
         // Time spent inside an intermediate zone (a rest in Peklo) counts for the full route only.
@@ -111,6 +113,25 @@ public sealed class AttemptValidator
             if (k + 1 < arrivals.Length)
                 prev = points[LastInside(points, checkpoints[k + 1], arrivals[k], arrivals[k + 1])].Time;
         }
+        if (variant != RouteVariant.Full) stages.Clear();
+
+        var records = RecordVariants(variant, finishUtc - startUtc, stages, options);
+        bool strict = records.Count > 0;
+        if (strict)
+            findings.Add(new Finding(FindingCode.RecordCandidate, Severity.ManualReview,
+                $"Čas by byl rekord ({string.Join(", ", records.Select(VariantName))}). Rekordy schvaluje člověk."));
+
+        var analysis = Analyze(slice, startAlong, findings);
+        CheckDensity(slice, findings);
+        CheckGaps(slice, analysis, strict, findings);
+        CheckDetours(slice, analysis, options.DetourExplained, findings);
+        double shortcutSaved = CheckShortcuts(slice, analysis, strict, findings);
+        CheckSpeed(slice, analysis, findings);
+        double coverage = CheckCoverage(analysis, startAlong + checkpoints[0].RadiusM,
+            endAlong - checkpoints[^1].RadiusM, findings);
+
+        var shape = ShapeOf(slice, analysis, startAlong, endAlong);
+        CheckDuplicates(fingerprint, startUtc, finishUtc, shape, options.KnownAttempts, findings);
 
         return new ValidationResult
         {
@@ -123,13 +144,37 @@ public sealed class AttemptValidator
             ShortcutSavedM = shortcutSaved,
             StartUtc = startUtc,
             FinishUtc = finishUtc,
-            Stages = variant == RouteVariant.Full ? stages : [],
+            Stages = stages,
             RouteLengthM = Math.Max(0, endAlong - startAlong),
             RecordedDistanceM = analysis.Cumulative[^1],
             CoveragePercent = coverage,
             PointCount = points.Count,
+            Shape = shape,
+            RecordVariants = records,
         };
     }
+
+    /// <summary>Which of the measured times would be records.</summary>
+    private static List<RouteVariant> RecordVariants(RouteVariant variant, TimeSpan elapsed,
+        List<StageTime> stages, ValidationOptions options)
+    {
+        var list = new List<RouteVariant>();
+        if (options.IsRecordCandidate || options.IsRecordTime?.Invoke(variant, elapsed) == true)
+            list.Add(variant);
+        if (options.IsRecordTime is { } isRecord && stages.Count == 2)
+        {
+            if (isRecord(RouteVariant.Stage1, stages[0].Elapsed)) list.Add(RouteVariant.Stage1);
+            if (isRecord(RouteVariant.Stage2, stages[1].Elapsed)) list.Add(RouteVariant.Stage2);
+        }
+        return list;
+    }
+
+    private static string VariantName(RouteVariant v) => v switch
+    {
+        RouteVariant.Full => "celá trasa",
+        RouteVariant.Stage1 => "Etapa 1",
+        _ => "Etapa 2",
+    };
 
     // ---- input ----
 
@@ -168,6 +213,46 @@ public sealed class AttemptValidator
             if (merged.Count == 0 || p.Time > merged[^1].Time)
                 merged.Add(p);
         return merged;
+    }
+
+    /// <summary>
+    /// Watch and phone may overlap in time, but then they must be in the same place.
+    /// Two files from different places at the same time are two people or a made-up record.
+    /// </summary>
+    private void CheckFilesAgree(List<GpxTrack> files, List<Finding> findings)
+    {
+        var timed = files
+            .Select(f => f.Points
+                .Where(p => p.Position.IsValid && p.Time is not null)
+                .Select(p => new TrackPoint(p.Position, p.Time!.Value.ToUniversalTime()))
+                .OrderBy(p => p.Time)
+                .ToList())
+            .Where(l => l.Count > 0)
+            .ToList();
+
+        for (int a = 0; a < timed.Count; a++)
+        for (int b = a + 1; b < timed.Count; b++)
+        {
+            var A = timed[a];
+            var B = timed[b];
+            double worst = 0;
+            DateTimeOffset? at = null;
+            int j = 0;
+            foreach (var p in B)
+            {
+                if (p.Time < A[0].Time || p.Time > A[^1].Time) continue;
+                while (j + 1 < A.Count && A[j + 1].Time <= p.Time) j++;
+                // Nearest point of A in time, at most one recording interval away.
+                var q = j + 1 < A.Count && (A[j + 1].Time - p.Time) < (p.Time - A[j].Time) ? A[j + 1] : A[j];
+                if (Math.Abs((q.Time - p.Time).TotalSeconds) > L.MaxPointIntervalS) continue;
+                double d = Geo.Distance(p.Position, q.Position);
+                if (d > worst) { worst = d; at = p.Time; }
+            }
+            if (worst > L.FilesMaxApartM)
+                findings.Add(new Finding(FindingCode.FilesDisagree, Severity.ManualReview,
+                    $"Soubory {a + 1} a {b + 1} se ve stejný čas liší o {worst:0} m. Nahrálo je jedno zařízení na jednom člověku?",
+                    at));
+        }
     }
 
     /// <summary>
@@ -360,8 +445,9 @@ public sealed class AttemptValidator
                 $"Body jsou zaznamenané v průměru po {median:0} s. Pravidla chtějí bod aspoň každých {L.MaxPointIntervalS:0} s."));
     }
 
-    private void CheckGaps(List<TrackPoint> slice, Analysis a, List<Finding> findings)
+    private void CheckGaps(List<TrackPoint> slice, Analysis a, bool strict, List<Finding> findings)
     {
+        int recordPauses = 0;
         int pauses = 0, listed = 0;
         TimeSpan pauseTotal = TimeSpan.Zero;
         var maxGap = TimeSpan.FromHours(L.MaxGapHours);
@@ -378,6 +464,12 @@ public sealed class AttemptValidator
                 {
                     pauses++;
                     pauseTotal += dt;
+                    // A car ride home with the recording off looks exactly like this. For a record,
+                    // the reviewer asks where the runner spent the time.
+                    if (strict && dt.TotalMinutes >= L.RecordPauseReviewMin && recordPauses++ < MaxListedFindingsPerCode)
+                        findings.Add(new Finding(FindingCode.RecordPause, Severity.ManualReview,
+                            $"Rekordní pokus: mezera v záznamu {Duration(dt)} s návratem na stejné místo. Potřebujeme krátký popis, kde jsi byl (nocleh, pauza).",
+                            slice[i - 1].Time, Km(a.Along[i - 1])));
                 }
                 else
                 {
@@ -403,7 +495,7 @@ public sealed class AttemptValidator
                 $"{pauses}× mezera v záznamu s návratem na stejné místo, celkem {Duration(pauseTotal)}. Čas běží dál."));
     }
 
-    private void CheckDetours(List<TrackPoint> slice, Analysis a, List<Finding> findings)
+    private void CheckDetours(List<TrackPoint> slice, Analysis a, bool explained, List<Finding> findings)
     {
         int i = 0, n = slice.Count;
         while (i < n)
@@ -438,6 +530,9 @@ public sealed class AttemptValidator
             else if (length >= skipped)
                 findings.Add(new Finding(FindingCode.Detour, Severity.ManualReview,
                     $"Odbočka s návratem o {skipped:0} m dál po trase, ale ušel víc, než přeskočil: " + desc, at, km));
+            else if (explained)
+                findings.Add(new Finding(FindingCode.OffRouteShortcut, Severity.ManualReview,
+                    $"Objížďka, která zkracuje trasu: přeskočeno {skipped:0} m trasy, ušel jen {length:0} m. Běžec poslal vysvětlení, posoudí člověk. " + desc, at, km));
             else
                 findings.Add(new Finding(FindingCode.OffRouteShortcut, Severity.Reject,
                     $"Zkratka mimo koridor: přeskočeno {skipped:0} m trasy, ušel jen {length:0} m. " + desc, at, km));
@@ -494,13 +589,17 @@ public sealed class AttemptValidator
 
         double total = events.Sum(e => e.Saved);
         bool repeated = events.Count >= L.RepeatedShortcutCount;
-        var severity = repeated && isRecordCandidate ? Severity.ManualReview : Severity.Info;
         foreach (var (s, _, saved) in events.Take(MaxListedFindingsPerCode))
+        {
+            // For a record even one big cut matters: GPS noise rarely saves that much.
+            bool big = saved >= L.RecordShortcutM;
+            var severity = isRecordCandidate && (repeated || big) ? Severity.ManualReview : Severity.Info;
             findings.Add(new Finding(FindingCode.Shortcut, severity,
-                repeated
-                    ? $"Opakované zkracování v koridoru: tady o {saved:0} m."
-                    : $"Ojedinělé zkrácení o {saved:0} m, nejspíš nepřesnost GPS.",
+                repeated ? $"Opakované zkracování v koridoru: tady o {saved:0} m." :
+                big ? $"Velké zkrácení v koridoru o {saved:0} m." :
+                $"Ojedinělé zkrácení o {saved:0} m, nejspíš nepřesnost GPS.",
                 slice[s].Time, Km(a.Along[s])));
+        }
         return total;
     }
 
@@ -540,6 +639,38 @@ public sealed class AttemptValidator
                 $"Podezřelé tempo {Kmh(s, e):0.0} km/h na {(progress[e] - progress[s]) / 1000:0.0} km trasy.",
                 slice[s].Time, Km(a.Along[s])));
         }
+
+        // A bike at 15 km/h is a normal pace for a runner, but not for someone who walks 5 km/h.
+        double usual = UsualMovingKmh(slice, progress);
+        double ownLimit = Math.Max(L.OwnPaceMinKmh, usual * L.OwnPaceFactor);
+        if (usual <= 0 || ownLimit >= L.SuspiciousSpeedKmh) return;
+        int listed = 0;
+        foreach (var (s, e) in FastWindows(slice, progress, L.SuspiciousWindowM, ownLimit))
+        {
+            if (vehicle.Any(v => v.Start <= e && s <= v.End) || suspicious.Any(v => v.Start <= e && s <= v.End)) continue;
+            if (listed++ >= MaxListedFindingsPerCode) break;
+            findings.Add(new Finding(FindingCode.FastForRunner, Severity.ManualReview,
+                $"Tempo {Kmh(s, e):0.0} km/h na {(progress[e] - progress[s]) / 1000:0.0} km trasy je víc než {L.OwnPaceFactor:0.#}× rychlejší než tvoje obvyklé tempo {usual:0.0} km/h.",
+                slice[s].Time, Km(a.Along[s])));
+        }
+    }
+
+    /// <summary>Median speed over 10-minute pieces of the record that were not standing still.</summary>
+    private static double UsualMovingKmh(List<TrackPoint> slice, double[] progress)
+    {
+        var speeds = new List<double>();
+        int s = 0;
+        for (int i = 1; i < slice.Count; i++)
+        {
+            double secs = (slice[i].Time - slice[s].Time).TotalSeconds;
+            if (secs < 600) continue;
+            double kmh = (progress[i] - progress[s]) / secs * 3.6;
+            if (kmh >= 1.5) speeds.Add(kmh); // slower than that is a rest
+            s = i;
+        }
+        if (speeds.Count == 0) return 0;
+        speeds.Sort();
+        return speeds[speeds.Count / 2];
     }
 
     /// <summary>Merged index ranges where the speed over at least windowM of distance is above the limit.</summary>
@@ -564,6 +695,43 @@ public sealed class AttemptValidator
                 ranges.Add((i, j));
         }
         return ranges;
+    }
+
+    /// <summary>
+    /// Time and place where the record first got past each bin boundary of the route, interpolated
+    /// between the two points around it so that moving the points a little changes little. Boundaries
+    /// sit at whole multiples of the bin, so a stage attempt lines up with a full-route attempt.
+    /// </summary>
+    private TrackShape ShapeOf(List<TrackPoint> slice, Analysis a, double startAlong, double endAlong)
+    {
+        double bin = L.ShapeBinM;
+        double from = Math.Ceiling(startAlong / bin) * bin;
+        int count = Math.Max(0, (int)Math.Floor((endAlong - from) / bin) + 1);
+        var samples = new ShapeSample?[count];
+        var t0 = slice[0].Time;
+        int next = 0, last = -1;
+        for (int i = 0; i < slice.Count && next < count; i++)
+        {
+            if (a.Along[i] is not { } here) continue;
+            while (next < count && here >= from + next * bin)
+            {
+                double boundary = from + next * bin;
+                if (last >= 0 && a.Along[last] is { } before && before < boundary &&
+                    (slice[i].Time - slice[last].Time).TotalSeconds <= 2 * L.MaxPointIntervalS)
+                {
+                    double f = (boundary - before) / (here - before);
+                    var p0 = slice[last];
+                    var p1 = slice[i];
+                    double secs = (p0.Time - t0).TotalSeconds + f * (p1.Time - p0.Time).TotalSeconds;
+                    samples[next] = new ShapeSample((int)Math.Round(secs),
+                        Math.Round(p0.Position.Lat + f * (p1.Position.Lat - p0.Position.Lat), 6),
+                        Math.Round(p0.Position.Lon + f * (p1.Position.Lon - p0.Position.Lon), 6));
+                }
+                next++;
+            }
+            if (last < 0 || a.Along[last] is not { } max || here > max) last = i;
+        }
+        return new TrackShape(from, bin, samples);
     }
 
     /// <summary>Marks 100 m bins of the route that the record walked through. Returns coverage in %.</summary>
@@ -621,7 +789,7 @@ public sealed class AttemptValidator
     }
 
     private void CheckDuplicates(string fingerprint, DateTimeOffset? start, DateTimeOffset? finish,
-        IEnumerable<KnownAttempt>? known, List<Finding> findings)
+        TrackShape? shape, IEnumerable<KnownAttempt>? known, List<Finding> findings)
     {
         if (known is null) return;
         foreach (var k in known)
@@ -635,8 +803,17 @@ public sealed class AttemptValidator
             if (start is { } s && finish is { } f &&
                 Math.Abs((k.StartUtc - s).TotalSeconds) <= L.SimilarAttemptToleranceS &&
                 Math.Abs((k.FinishUtc - f).TotalSeconds) <= L.SimilarAttemptToleranceS)
+            {
                 findings.Add(new Finding(FindingCode.SimilarAttempt, Severity.ManualReview,
                     $"Pokus {k.Id} má skoro stejný start i cíl. Může jít o skupinu, nebo o cizí záznam."));
+                continue;
+            }
+            // A copy with shifted times or moved points has a new hash but the same shape.
+            if (shape is not null && k.Shape is not null &&
+                shape.MatchPercent(k.Shape, L.CopyTimeToleranceS, L.CopyDistanceToleranceM) is { } pct &&
+                pct >= L.CopyMatchPercent)
+                findings.Add(new Finding(FindingCode.CopiedTrack, Severity.ManualReview,
+                    $"Stopa i mezičasy se na {pct:0} % trasy shodují s pokusem {k.Id}, i když soubor je jiný. Může jít o upravenou kopii cizího záznamu."));
         }
     }
 

@@ -45,7 +45,16 @@
     "suspiciousWindowM": 3000,
     "vehicleSpeedKmh": 30,
     "vehicleWindowM": 500,
+    "ownPaceFactor": 2.0,
+    "ownPaceMinKmh": 12,
+    "recordShortcutM": 400,
+    "recordPauseReviewMin": 30,
     "similarAttemptToleranceS": 120,
+    "shapeBinM": 250,
+    "copyTimeToleranceS": 10,
+    "copyDistanceToleranceM": 15,
+    "copyMatchPercent": 90,
+    "filesMaxApartM": 300,
     "futureToleranceMin": 60
   }
 }

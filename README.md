@@ -41,12 +41,31 @@ var validator = new AttemptValidator(config, route);
 var result = validator.Validate(
     [File.OpenRead("hodinky.gpx"), File.OpenRead("telefon.gpx")],
     RouteVariant.Full,
-    new ValidationOptions(KnownAttempts: existing, IsRecordCandidate: wouldBeFirst));
+    new ValidationOptions(
+        KnownAttempts: existing,                        // Id, Fingerprint, start, cíl a uložený Shape
+        IsRecordTime: (variant, time) => isFirst(variant, style, category, time),
+        DetourExplained: runnerSentNote));             // objížďka uzavírky jde k člověku místo zamítnutí
 // result.Verdict: Accepted / ManualReview / Rejected
 // result.Elapsed, result.Stages, result.Findings, result.Fingerprint
-// result.AttemptDateUtc, result.RulesVersion
+// result.AttemptDateUtc (odchod ze startovní zóny), result.RulesVersion
+// result.RecordVariants: varianty, kde by čas byl rekord (i etapa z celé trasy)
+// result.Shape.Encode(): tvar stopy, ulož k pokusu kvůli hledání kopií
 // result.Stage1Fallback: Etapa 1 z nedokončeného pokusu o celou trasu
 ```
+
+Co kontrola pozná a co ne:
+
+| Pravidlo | Automat | Člověk |
+|---|---|---|
+| Auto, vlak (záznam běží) | rychlost nad 30 km/h na 500 m = zamítnutí | – |
+| Kolo, podezřele rychlý úsek | nad 18 km/h na 3 km, nebo víc než 2× vlastní tempo (aspoň 12 km/h) | posoudí |
+| Kopie cizího záznamu | stejný soubor = zamítnutí; stejný tvar stopy a mezičasy = ruční kontrola | posoudí |
+| Zkratka mimo koridor | zamítnutí; s vysvětlením (uzavírka) ruční kontrola | posoudí |
+| Zkratky v koridoru | u rekordu opakované nebo jedna nad 400 m | posoudí |
+| Odvoz autem při vypnutém záznamu | nepozná; u rekordu každá mezera od 30 min jde k člověku | zeptá se na nocleh |
+| Rekord (i etapy z celé trasy) | pozná přes `IsRecordTime` | schvaluje vždy |
+| Víc souborů | vždy k člověku; soubory ze stejné doby daleko od sebe = upozornění | posoudí |
+| Styl (unsupported…), skupina, pacer, věk | nepozná | jen podle poctivosti a namátkou |
 
 Testy: `dotnet test` v kořeni repa.
 
