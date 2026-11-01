@@ -1,15 +1,44 @@
 {
   "routeGpx": "trasa.gpx",
-  "start":  { "name": "Nebeská Rybná, kostel",   "lat": 50.18885, "lon": 16.41996, "radiusM": 150 },
-  "peklo":  { "name": "Peklo, Bartoňova útulna", "lat": 50.37925, "lon": 16.18723, "radiusM": 150 },
-  "finish": { "name": "Vyhlídka Český ráj",      "lat": 50.46670, "lon": 15.28963, "radiusM": 150 },
+  "acceptFrom": "2027-05-01",
+  "rules": [
+    {
+      "version": "1",
+      "from": "2026-10-31"
+    },
+    {
+      "version": "1.1",
+      "from": "2026-11-01"
+    }
+  ],
+  "start": {
+    "name": "Nebeská Rybná, kostel",
+    "lat": 50.18885,
+    "lon": 16.41996,
+    "radiusM": 150
+  },
+  "peklo": {
+    "name": "Peklo, Bartoňova útulna",
+    "lat": 50.37925,
+    "lon": 16.18723,
+    "radiusM": 150
+  },
+  "finish": {
+    "name": "Vyhlídka Český ráj",
+    "lat": 50.4667,
+    "lon": 15.28963,
+    "radiusM": 150
+  },
   "limits": {
     "corridorM": 150,
     "maxPointIntervalS": 60,
-    "pauseMaxMoveM": 50,
-    "shortDetourMaxDurationMin": 15,
-    "shortDetourMaxLengthM": 1000,
-    "shortDetourMaxDistanceM": 500,
+    "resumeMaxDistanceM": 100,
+    "maxGapHours": 12,
+    "detourReturnToleranceM": 200,
+    "shortcutMinSavedM": 150,
+    "shortcutWindowS": 120,
+    "shortcutPaceTolerance": 1.3,
+    "repeatedShortcutCount": 2,
     "minCoveragePercent": 90,
     "maxUncoveredStretchM": 500,
     "suspiciousSpeedKmh": 18,
