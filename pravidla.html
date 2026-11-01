@@ -29,6 +29,7 @@
           <li class="site-nav__item"><a class="site-nav__link" href="trasa.html">Trasa</a></li>
           <li class="site-nav__item"><a class="site-nav__link" href="pravidla.html" aria-current="page">Pravidla</a></li>
           <li class="site-nav__item"><a class="site-nav__link" href="zebricek.html">Žebříček</a></li>
+          <li class="site-nav__item"><a class="site-nav__link" href="faq.html">FAQ</a></li>
           <li class="site-nav__item"><a class="site-nav__link" href="kontakt.html">Kontakt</a></li>
           <li class="site-nav__item"><a class="button button--small" href="index.html#waitlist">Waitlist</a></li>
         </ul>
@@ -57,7 +58,7 @@
         <h2 class="section__title">Pravidla na jedné obrazovce</h2>
         <ol class="steps">
           <li class="steps__item"><strong>Jeden směr.</strong> Nebe → Peklo → Ráj. Projdeš startovní, kontrolní i cílovou zónou (150 m) v tomhle pořadí.</li>
-          <li class="steps__item"><strong>Drž se trasy.</strong> Oficiální GPX, koridor 150 m na každou stranu. Zkratky ne. Krátká odbočka pro vodu nebo do obchodu je v pořádku, vrať se na stejné místo.</li>
+          <li class="steps__item"><strong>Drž se trasy.</strong> Oficiální GPX, koridor 150 m na každou stranu. Zkratky ne. Odbočka pěšky pro vodu, do obchodu nebo na nocleh je v pořádku, vrať se na stejné místo.</li>
           <li class="steps__item"><strong>Hodiny běží pořád.</strong> Od opuštění startovní zóny po vstup do cílové. Spánek a pauzy se počítají. Limit není.</li>
           <li class="steps__item"><strong>Jen po svých.</strong> Pěšky nebo během. Jakmile popojedeš autem nebo vlakem (i domů na noc), pokus končí.</li>
           <li class="steps__item"><strong>Vyber si styl.</strong> Bez podpory, na vlastní pěst, nebo s podporou.</li>
@@ -73,6 +74,7 @@
       <div class="container container--narrow prose">
         <h2 class="section__title">Měření času</h2>
         <p>Měří se celkový uplynulý čas od opuštění startovní zóny po vstup do cílové zóny. Hodiny běží i během spánku, jídla a všech pauz. Časový limit není a zvláštní vícedenní kategorie neexistuje: pomalé pokusy jsou ve stejném žebříčku.</p>
+        <p>Uznáváme pokusy se startem od spuštění výzvy v květnu 2027. Každý pokus posoudíme podle pravidel platných v den jeho startu (datum je v GPX záznamu).</p>
         <h3 class="subsection__title">Start, Peklo a cíl</h3>
         <ul>
           <li>Start: kostel v Nebeské Rybné, zóna 150 m včetně autobusové zastávky.</li>
@@ -86,13 +88,14 @@
     <section class="section" id="styly">
       <div class="container">
         <h2 class="section__title">Styly</h2>
-        <p class="section__intro">Styl si zvolíš před startem a zadáš ho při nahrání záznamu. Každý styl má vlastní žebříček. Vycházíme z běžných zvyklostí FKT.</p>
+        <p class="section__intro">Styl si zvolíš před startem a zadáš ho při nahrání záznamu. Když cestou porušíš pravidla svého stylu (třeba unsupported koupí vodu), nahraj pokus v nižším stylu. Každý styl má vlastní žebříček. Vycházíme z běžných zvyklostí FKT.</p>
         <div class="table-wrap" tabindex="0" role="region" aria-label="Styly FKT">
           <table class="table table--striped table--stack">
             <thead><tr><th scope="col"></th><th scope="col">Unsupported (bez podpory)</th><th scope="col">Self-supported (na vlastní pěst)</th><th scope="col">Supported (s podporou)</th></tr></thead>
             <tbody>
               <tr><th scope="row">Jídlo a vybavení</th><td data-label="Unsupported">Vše neseš od startu</td><td data-label="Self-supported">Neseš, doplňuješ po cestě</td><td data-label="Supported">Můžeš dostávat od týmu</td></tr>
-              <tr><th scope="row">Voda</th><td data-label="Unsupported">Jen přírodní a veřejné bezplatné zdroje (nemusí být pitné)</td><td data-label="Self-supported">Cokoliv</td><td data-label="Supported">Cokoliv</td></tr>
+              <tr><th scope="row">Voda</th><td data-label="Unsupported">Jen přírodní a veřejné bezplatné zdroje (nemusí být pitné), ne od cizích lidí</td><td data-label="Self-supported">Cokoliv</td><td data-label="Supported">Cokoliv</td></tr>
+              <tr><th scope="row">Spaní</th><td data-label="Unsupported">Venku, kde je to dovolené, nebo v bezplatné útulně či přístřešku</td><td data-label="Self-supported">Kdekoliv</td><td data-label="Supported">Kdekoliv</td></tr>
               <tr><th scope="row">Obchody, hospody, penziony</th><td data-label="Unsupported" class="table__no">Ne</td><td data-label="Self-supported" class="table__yes">Ano</td><td data-label="Supported" class="table__yes">Ano</td></tr>
               <tr><th scope="row">Vlastní depo předem</th><td data-label="Unsupported" class="table__no">Ne</td><td data-label="Self-supported" class="table__yes">Ano, jen nachystané sám</td><td data-label="Supported" class="table__yes">Ano</td></tr>
               <tr><th scope="row">Pomoc známých, doprovod autem</th><td data-label="Unsupported" class="table__no">Ne</td><td data-label="Self-supported" class="table__no">Ne</td><td data-label="Supported" class="table__yes">Ano</td></tr>
@@ -101,7 +104,7 @@
           </table>
         </div>
         <h3 class="subsection__title">Skupiny</h3>
-        <p>Když jdou dva a víc lidí spolu, zapisuje se každý zvlášť se značkou „skupina“. Pomoc uvnitř skupiny styl nemění (sdílení jídla nebo vybavení je v pořádku), pokud skupina startovala spolu a nikoho cestou nepřibrala. Kdo se připojí na trati, je pacer a pokus je supported.</p>
+        <p>Když jdou dva a víc lidí spolu, zapisuje se každý zvlášť se značkou „skupina“. Pomoc uvnitř skupiny styl nemění (sdílení jídla nebo vybavení je v pořádku), pokud skupina startovala spolu a nikoho cestou nepřibrala. Kdo se k vám na trati domluveně připojí, je pacer a pokus je supported. Náhodní turisté, se kterými chvíli jdeš, pacery nejsou.</p>
       </div>
     </section>
 
@@ -112,8 +115,8 @@
           <li><strong>Pauza a spánek:</strong> pauzu si dáš kdekoliv, spát venku můžeš jen tam, kde je to dovolené (v CHKO se mimo vyhrazená místa netáboří a nerozdělává oheň). Kdo trasu opustí, pokračuje přesně z místa, kde skončil.</li>
           <li><strong>Odjezd z trasy:</strong> kdo trasu opustí autem, vlakem nebo jinou dopravou (třeba na noc domů), pokus tím končí. Další pokus začíná znovu od startu. Pěšky odbočit na nocleh nebo do obchodu je v pořádku.</li>
           <li><strong>Celá trasa z etap:</strong> dvě etapy jako samostatné pokusy se jako celá trasa neuznávají. Celá trasa je jeden souvislý pokus.</li>
-          <li><strong>Etapy z celé trasy:</strong> časy obou etap se z pokusu o celou trasu zapíšou i do žebříčků etap.</li>
-          <li><strong>Odbočky:</strong> krátká odbočka z koridoru jde na ruční schválení, zkratky jsou zakázané. Víc na stránce <a href="trasa.html#koridor">Trasa</a>.</li>
+          <li><strong>Etapy z celé trasy:</strong> časy obou etap se z pokusu o celou trasu zapíšou i do žebříčků etap. Když celou trasu nedokončíš, zapíše se aspoň Etapa 1.</li>
+          <li><strong>Odbočky:</strong> odbočka pěšky (voda, obchod, nocleh, uzavírka) může být jakkoli dlouhá, hodiny ale běží a vrátit se musíš na stejné místo. Odbočku z koridoru schválíme ručně. Zkratky jsou zakázané i uvnitř koridoru, třeba seříznutá serpentina. U rekordů to kontrolujeme ručně: ojedinělá odchylka bývá nepřesnost GPS a pokus neovlivní, opakované zkracování ano. Víc na stránce <a href="trasa.html#koridor">Trasa</a>.</li>
           <li><strong>Pohyb:</strong> zatím jen pěšky nebo během. Kolo plánujeme nejdřív v roce 2027 nebo 2028. Pes je povolený.</li>
         </ul>
       </div>
@@ -126,10 +129,11 @@
         <ul>
           <li><strong>Formát:</strong> soubor .gpx, každý bod s časem, body aspoň každých 60 s.</li>
           <li><strong>Více souborů:</strong> když dojde baterie nebo se záznam rozdělí, nahraješ víc souborů s krátkou zprávou. Pokus pak schválíme ručně.</li>
+          <li><strong>Mezery v záznamu:</strong> mezera do 12 hodin (spánek, vybitá baterie) je v pořádku, když pak pokračuješ z místa, kde záznam skončil (do 100 m). Delší mezeru posoudíme ručně.</li>
           <li><strong>Kdy nahrát:</strong> kdykoliv po dokončení, bez lhůty. <span class="badge badge--soon">nahrávání od května 2027</span></li>
           <li><strong>Ohlášení předem a fotky:</strong> nepovinné.</li>
           <li><strong>Automatická kontrola:</strong> průchod zónami ve správném pořadí, záznam v koridoru, rozumné tempo (žádný úsek rychlostí auta nebo kola) a kontrola, že stejný záznam už nenahrál někdo jiný.</li>
-          <li><strong>Ruční schválení:</strong> nové rekordy (1. místo ve variantě a stylu), odbočky z koridoru a záznamy z více souborů. Můžeme si vyžádat doplňující informace.</li>
+          <li><strong>Ruční schválení:</strong> nové rekordy (1. místo ve variantě a stylu), odbočky z koridoru a záznamy z více souborů. Můžeme si vyžádat originální soubor z hodinek nebo odkaz na Stravu. Fotky povinné nejsou a rekord kvůli nim nepropadne, když stopa sedí.</li>
         </ul>
       </div>
     </section>
@@ -187,6 +191,7 @@
             <div class="faq__answer"><p>Pes ano. Na vodítku ho měj všude, kde to vyžaduje obec, řád rezervace nebo vlastník pozemku. Kolo zatím ne, nejdřív v roce 2027 nebo 2028.</p></div>
           </details>
         </div>
+        <p><a href="faq.html">Všechny otázky</a></p>
       </div>
     </section>
 
@@ -194,6 +199,7 @@
       <div class="container container--narrow">
         <h2 class="section__title">Historie změn</h2>
         <p>31. 10. 2026: verze 1.</p>
+        <p>1. 11. 2026: doplněno, co jsou zkratky, Etapa 1 z nedokončené celé trasy, co chceme u rekordu, od kdy se pokusy uznávají, podle jakých pravidel se posuzují, mezery v záznamu, voda a spaní u stylu unsupported, délka odboček, kdo je pacer a přechod do nižšího stylu.</p>
       </div>
     </section>
 
@@ -219,6 +225,7 @@
             <li><a href="trasa.html">Trasa</a></li>
             <li><a href="pravidla.html">Pravidla</a></li>
             <li><a href="zebricek.html">Žebříček</a></li>
+            <li><a href="faq.html">Časté otázky</a></li>
           </ul>
         </div>
         <div>
