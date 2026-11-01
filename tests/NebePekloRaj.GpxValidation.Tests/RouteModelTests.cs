@@ -19,7 +19,7 @@ public class RouteModelTests
         Assert.True(peklo.DistanceFromRouteM < 50, $"peklo {peklo.DistanceFromRouteM} m");
         Assert.InRange(peklo.AlongM, 47_700, 48_700);
 
-        // Known issue: the preliminary GPX ends about 210 m before the finish point.
+        // Known issue: the preliminary GPX ends about 185 m before the finish point.
         var finish = route.ProjectNearest(cfg.Finish.Position)!.Value;
         Assert.InRange(finish.DistanceFromRouteM, 180, 240);
         Assert.Equal(route.LengthM, finish.AlongM, 0);
