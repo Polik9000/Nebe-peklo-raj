@@ -19,7 +19,7 @@ public sealed record ValidationLimits
     /// <summary>Longer gaps (with resume in place) go to manual review.</summary>
     public double MaxGapHours { get; init; } = 12;
     /// <summary>Coming back within this distance along the route counts as "the same place".</summary>
-    public double DetourReturnToleranceM { get; init; } = 200;
+    public double DetourReturnToleranceM { get; init; } = 100;
     /// <summary>A place where the record saves at least this much route distance is a shortcut.</summary>
     public double ShortcutMinSavedM { get; init; } = 150;
     public double ShortcutWindowS { get; init; } = 120;

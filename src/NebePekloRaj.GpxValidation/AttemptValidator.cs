@@ -100,13 +100,16 @@ public sealed class AttemptValidator
         var finishUtc = points[arrivals[^1]].Time;
         CheckDuplicates(fingerprint, startUtc, finishUtc, options.KnownAttempts, findings);
 
+        // Each stage runs like a standalone attempt: from leaving one zone to entering the next.
+        // Time spent inside an intermediate zone (a rest in Peklo) counts for the full route only.
         var stages = new List<StageTime>();
         var prev = startUtc;
         for (int k = 0; k < arrivals.Length; k++)
         {
             var at = points[arrivals[k]].Time;
             stages.Add(new StageTime(StageName(checkpoints[k], checkpoints[k + 1]), prev, at));
-            prev = at;
+            if (k + 1 < arrivals.Length)
+                prev = points[LastInside(points, checkpoints[k + 1], arrivals[k], arrivals[k + 1])].Time;
         }
 
         return new ValidationResult
@@ -285,6 +288,14 @@ public sealed class AttemptValidator
             if (cps[0].Contains(points[i].Position)) { departure = i; break; }
 
         return (departure, arrivals);
+    }
+
+    /// <summary>Last point inside the zone between arriving there and arriving at the next zone.</summary>
+    private static int LastInside(List<TrackPoint> points, Checkpoint cp, int arrival, int nextArrival)
+    {
+        for (int i = nextArrival - 1; i > arrival; i--)
+            if (cp.Contains(points[i].Position)) return i;
+        return arrival;
     }
 
     private double AlongOf(GeoPoint p, double fallback) =>
