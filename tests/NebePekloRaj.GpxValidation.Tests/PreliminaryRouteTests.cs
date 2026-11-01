@@ -23,7 +23,7 @@ public class PreliminaryRouteTests
         var b = new TrackBuilder(cfg.Start.Position, T0)
             .Stand(TimeSpan.FromMinutes(2))
             .Walk(Route(0, RealRoute.Route.LengthM), Kmh)
-            .Walk(cfg.Finish.Position, Kmh); // the last ~210 m beyond the end of the GPX
+            .Walk(cfg.Finish.Position, Kmh); // the last ~185 m beyond the end of the GPX
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full);
 
@@ -37,7 +37,7 @@ public class PreliminaryRouteTests
     [Fact]
     public void Stopping_at_end_of_preliminary_gpx_misses_finish_zone()
     {
-        // Documents the open question: the GPX ends ~210 m before the finish point, outside the 150 m zone.
+        // Documents the open question: the GPX ends ~185 m before the finish point, outside the 150 m zone.
         var b = new TrackBuilder(RealRoute.Config.Start.Position, T0).Walk(Route(0, RealRoute.Route.LengthM), Kmh);
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full);
