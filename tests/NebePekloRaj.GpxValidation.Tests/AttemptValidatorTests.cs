@@ -10,7 +10,7 @@ public class AttemptValidatorTests
 
     private static ValidationResult Check(TrackBuilder b, RouteVariant v = RouteVariant.Full,
         IEnumerable<KnownAttempt>? known = null) =>
-        Validator().Validate([b.Build()], v, known);
+        Validator().Validate([b.Build()], v, new ValidationOptions(known));
 
     private static TrackBuilder CleanRun() => Walker().Stand(TimeSpan.FromMinutes(1)).Walk(Line(0, LengthM), Kmh);
 
@@ -113,21 +113,61 @@ public class AttemptValidatorTests
         var r = Check(b);
 
         Assert.Equal(Verdict.ManualReview, r.Verdict);
-        var f = Assert.Single(r.Findings, f => f.Code == FindingCode.ShortDetour);
+        var f = Assert.Single(r.Findings, f => f.Code == FindingCode.Detour);
         Assert.Equal(3.0, f.RouteKm!.Value, 0);
     }
 
     [Fact]
-    public void Long_detour_is_rejected()
+    public void Long_detour_back_to_the_same_place_needs_manual_review()
     {
+        // 2 km off the route to a shop, 30 min there, and back to where the runner left.
         var b = Walker().Walk(Line(0, 5_000), Kmh)
-            .Walk([At(5_500, 1_000), At(6_500, 1_000), At(7_000, 0)], Kmh)
-            .Walk(Line(7_000, LengthM), Kmh);
+            .Walk(At(5_000, 2_000), Kmh).Stand(TimeSpan.FromMinutes(30)).Walk(At(5_000), Kmh)
+            .Walk(Line(5_000, LengthM), Kmh);
 
         var r = Check(b);
 
-        Assert.Equal(Verdict.Rejected, r.Verdict);
-        Assert.True(Has(r, FindingCode.LongDetour));
+        Assert.Equal(Verdict.ManualReview, r.Verdict);
+        Assert.Single(r.Findings, f => f.Code == FindingCode.Detour);
+    }
+
+    [Fact]
+    public void Detour_rejoining_further_on_is_fine_when_it_walked_more()
+    {
+        var b = Walker().Walk(Line(0, 5_000), Kmh)
+            .Walk([At(5_200, 800), At(5_400, 800), At(5_600, 0)], Kmh)
+            .Walk(Line(5_600, LengthM), Kmh);
+
+        var r = Check(b);
+
+        Assert.Equal(Verdict.ManualReview, r.Verdict);
+        Assert.True(Has(r, FindingCode.Detour));
+    }
+
+    [Fact]
+    public void Sleep_gap_up_to_12_h_in_place_is_ok()
+    {
+        var b = Walker().Walk(Line(0, 6_000), Kmh)
+            .JumpTo(At(6_080), TimeSpan.FromHours(9))
+            .Walk(Line(6_080, LengthM), Kmh);
+
+        var r = Check(b);
+
+        Assert.Equal(Verdict.Accepted, r.Verdict);
+        Assert.True(Has(r, FindingCode.Pause));
+    }
+
+    [Fact]
+    public void Gap_over_12_h_needs_manual_review()
+    {
+        var b = Walker().Walk(Line(0, 6_000), Kmh)
+            .JumpTo(At(6_050), TimeSpan.FromHours(13))
+            .Walk(Line(6_050, LengthM), Kmh);
+
+        var r = Check(b);
+
+        Assert.Equal(Verdict.ManualReview, r.Verdict);
+        Assert.True(Has(r, FindingCode.LongGap));
     }
 
     [Fact]
@@ -239,7 +279,9 @@ public class AttemptValidatorTests
         var single = Validator().Validate([new GpxTrack(all)], RouteVariant.Full);
         var merged = Validator().Validate([phone, watch], RouteVariant.Full);
 
-        Assert.Equal(Verdict.Accepted, merged.Verdict);
+        // Rules: records from several files are approved by hand.
+        Assert.Equal(Verdict.ManualReview, merged.Verdict);
+        Assert.Single(merged.Findings, f => f.Code == FindingCode.MultipleFiles);
         Assert.Equal(single.Elapsed, merged.Elapsed);
         Assert.Equal(single.Fingerprint, merged.Fingerprint);
     }
@@ -305,5 +347,76 @@ public class AttemptValidatorTests
 
         Assert.Equal(Verdict.Rejected, r.Verdict);
         Assert.True(Has(r, FindingCode.InvalidGpx));
+    }
+
+    [Fact]
+    public void Unfinished_full_route_still_records_stage1()
+    {
+        var r = Check(Walker().Walk(Line(0, 7_000), Kmh));
+
+        Assert.Equal(Verdict.Rejected, r.Verdict);
+        Assert.True(Has(r, FindingCode.FinishNotReached));
+        var stage1 = Assert.IsType<ValidationResult>(r.Stage1Fallback);
+        Assert.Equal(RouteVariant.Stage1, stage1.Variant);
+        Assert.Equal(Verdict.Accepted, stage1.Verdict);
+        Approx.Near(3_700 / (Kmh / 3.6), stage1.Elapsed!.Value.TotalSeconds, 100);
+    }
+
+    [Fact]
+    public void Car_ride_in_stage2_still_records_stage1()
+    {
+        var b = Walker().Walk(Line(0, 6_000), Kmh).Walk(Line(6_000, 8_000), 60).Walk(Line(8_000, LengthM), Kmh);
+
+        var r = Check(b);
+
+        Assert.Equal(Verdict.Rejected, r.Verdict);
+        Assert.Equal(Verdict.Accepted, r.Stage1Fallback!.Verdict);
+    }
+
+    [Fact]
+    public void Car_ride_in_stage1_gives_no_stage1()
+    {
+        var b = Walker().Walk(Line(0, 1_000), Kmh).Walk(Line(1_000, 3_000), 60).Walk(Line(3_000, LengthM), Kmh);
+
+        Assert.Null(Check(b).Stage1Fallback);
+    }
+
+    [Fact]
+    public void Finished_full_route_has_no_fallback()
+    {
+        Assert.Null(Check(CleanRun()).Stage1Fallback);
+    }
+
+    [Fact]
+    public void Attempt_date_comes_from_first_point_and_picks_rules_version()
+    {
+        var cfg = Config with
+        {
+            AcceptFrom = new DateOnly(2027, 5, 1),
+            Rules = [new RulesVersion("1", new DateOnly(2026, 10, 31)), new RulesVersion("2", new DateOnly(2027, 6, 1))],
+        };
+        var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2028, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+
+        // Starts 31 May 23:30 Czech time (21:30 UTC) and finishes on 1 June: judged by version 1.
+        var t = new DateTimeOffset(2027, 5, 31, 21, 30, 0, TimeSpan.Zero);
+        var may = validator.Validate([new TrackBuilder(At(0), t).Stand(TimeSpan.FromMinutes(40)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+        var june = validator.Validate([new TrackBuilder(At(0), t.AddDays(1)).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+
+        Assert.Equal(t, may.AttemptDateUtc);
+        Assert.Equal("1", may.RulesVersion);
+        Assert.Equal("2", june.RulesVersion);
+    }
+
+    [Fact]
+    public void Attempt_before_launch_is_rejected()
+    {
+        var cfg = Config with { AcceptFrom = new DateOnly(2027, 5, 1) };
+        var validator = new AttemptValidator(cfg, Route, new FixedTime(new DateTimeOffset(2028, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        var t = new DateTimeOffset(2027, 4, 30, 6, 0, 0, TimeSpan.Zero);
+
+        var r = validator.Validate([new TrackBuilder(At(0), t).Walk(Line(0, LengthM), Kmh).Build()], RouteVariant.Full);
+
+        Assert.Equal(Verdict.Rejected, r.Verdict);
+        Assert.True(Has(r, FindingCode.BeforeLaunch));
     }
 }

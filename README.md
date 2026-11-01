@@ -29,7 +29,7 @@ Kontrola nahraných pokusů je C# knihovna (.NET 8), oddělená od webu:
 | `src/NebePekloRaj.GpxValidation` | načtení GPX, kontroly pravidel, výpočet časů |
 | `tests/NebePekloRaj.GpxValidation.Tests` | unit testy, i na předběžné trase |
 | `data/trasa.gpx` | oficiální trasa (zatím předběžná) |
-| `data/challenge.json` | souřadnice startu, Pekla a cíle, zóny a všechny limity |
+| `data/challenge.json` | souřadnice startu, Pekla a cíle, zóny, všechny limity, datum spuštění a verze pravidel |
 
 Posun cíle nebo nová trasa = upravit `data/challenge.json` nebo nahradit `data/trasa.gpx`, kód se nemění. Zadání kontrol je v dokumentu [GPX parser – zadání](https://claude.ai/artifact/HLPhBwi1GfbCPqk4sHFbwi).
 
@@ -38,9 +38,14 @@ Použití:
 ```csharp
 var (config, route) = ChallengeConfig.LoadWithRoute("data/challenge.json");
 var validator = new AttemptValidator(config, route);
-var result = validator.Validate([File.OpenRead("hodinky.gpx"), File.OpenRead("telefon.gpx")], RouteVariant.Full);
+var result = validator.Validate(
+    [File.OpenRead("hodinky.gpx"), File.OpenRead("telefon.gpx")],
+    RouteVariant.Full,
+    new ValidationOptions(KnownAttempts: existing, IsRecordCandidate: wouldBeFirst));
 // result.Verdict: Accepted / ManualReview / Rejected
 // result.Elapsed, result.Stages, result.Findings, result.Fingerprint
+// result.AttemptDateUtc, result.RulesVersion
+// result.Stage1Fallback: Etapa 1 z nedokončeného pokusu o celou trasu
 ```
 
 Testy: `dotnet test` v kořeni repa.

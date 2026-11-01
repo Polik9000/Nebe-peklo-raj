@@ -5,11 +5,11 @@ namespace NebePekloRaj.GpxValidation.Tests;
 /// <summary>End-to-end checks on the preliminary route in data/trasa.gpx and data/challenge.json.</summary>
 public class PreliminaryRouteTests
 {
-    private static readonly DateTimeOffset T0 = new(2027, 5, 1, 4, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset T0 = new(2027, 6, 1, 4, 0, 0, TimeSpan.Zero);
     private const double Kmh = 9;
 
     private static AttemptValidator Validator() =>
-        new(RealRoute.Config, RealRoute.Route, new FixedTime(new DateTimeOffset(2027, 6, 1, 0, 0, 0, TimeSpan.Zero)));
+        new(RealRoute.Config, RealRoute.Route, new FixedTime(new DateTimeOffset(2027, 7, 1, 0, 0, 0, TimeSpan.Zero)));
 
     private static IEnumerable<GeoPoint> Route(double from, double to) =>
         TrackBuilder.Along(RealRoute.Route, from, to);
@@ -80,6 +80,19 @@ public class PreliminaryRouteTests
         var r = Validator().Validate([b.Build()], RouteVariant.Full);
 
         Assert.Contains(r.Findings, f => f.Code == FindingCode.FinishNotReached);
+        Assert.Equal(Verdict.Accepted, r.Stage1Fallback!.Verdict);
+        Assert.InRange(r.Stage1Fallback.Elapsed!.Value.TotalHours, 5.1, 5.5);
+    }
+
+    [Fact]
+    public void Real_config_judges_2027_attempts_by_current_rules()
+    {
+        var b = new TrackBuilder(RealRoute.Config.Start.Position, T0).Walk(Route(0, 5_000), Kmh);
+
+        var r = Validator().Validate([b.Build()], RouteVariant.Full);
+
+        Assert.Equal(T0, r.AttemptDateUtc);
+        Assert.Equal("1.1", r.RulesVersion);
     }
 
     [Fact]
@@ -96,8 +109,32 @@ public class PreliminaryRouteTests
                 Position = Geo.Offset(b.Points[i].Position, rnd.NextDouble() * 16 - 8, rnd.NextDouble() * 16 - 8),
             };
 
-        var r = Validator().Validate([b.Build()], RouteVariant.Full);
+        var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
 
         Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+    }
+
+    [Fact]
+    public void Record_with_a_point_every_60_s_has_no_false_shortcuts()
+    {
+        var cfg = RealRoute.Config;
+        var b = new TrackBuilder(cfg.Start.Position, T0, intervalS: 60)
+            .Walk(Route(0, RealRoute.Route.LengthM), 12)
+            .Walk(cfg.Finish.Position, 12);
+
+        var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
+
+        Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+    }
+
+    [Fact]
+    public void Real_config_rejects_attempt_before_launch()
+    {
+        var t = new DateTimeOffset(2027, 5, 8, 4, 0, 0, TimeSpan.Zero);
+        var b = new TrackBuilder(RealRoute.Config.Start.Position, t).Walk(Route(0, 5_000), Kmh);
+
+        var r = Validator().Validate([b.Build()], RouteVariant.Stage1);
+
+        Assert.Contains(r.Findings, f => f.Code == FindingCode.BeforeLaunch);
     }
 }

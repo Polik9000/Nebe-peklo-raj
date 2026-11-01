@@ -14,10 +14,19 @@ public sealed record ValidationLimits
 {
     public double CorridorM { get; init; } = 150;
     public double MaxPointIntervalS { get; init; } = 60;
-    public double PauseMaxMoveM { get; init; } = 50;
-    public double ShortDetourMaxDurationMin { get; init; } = 15;
-    public double ShortDetourMaxLengthM { get; init; } = 1000;
-    public double ShortDetourMaxDistanceM { get; init; } = 500;
+    /// <summary>A gap is fine when the record resumes this close to where it stopped.</summary>
+    public double ResumeMaxDistanceM { get; init; } = 100;
+    /// <summary>Longer gaps (with resume in place) go to manual review.</summary>
+    public double MaxGapHours { get; init; } = 12;
+    /// <summary>Coming back within this distance along the route counts as "the same place".</summary>
+    public double DetourReturnToleranceM { get; init; } = 200;
+    /// <summary>A place where the record saves at least this much route distance is a shortcut.</summary>
+    public double ShortcutMinSavedM { get; init; } = 150;
+    public double ShortcutWindowS { get; init; } = 120;
+    /// <summary>Progress up to this multiple of the usual pace is not a shortcut.</summary>
+    public double ShortcutPaceTolerance { get; init; } = 1.3;
+    /// <summary>From this many shortcuts on, a record attempt goes to manual review.</summary>
+    public int RepeatedShortcutCount { get; init; } = 2;
     public double MinCoveragePercent { get; init; } = 90;
     public double MaxUncoveredStretchM { get; init; } = 500;
     public double SuspiciousSpeedKmh { get; init; } = 18;
@@ -28,13 +37,20 @@ public sealed record ValidationLimits
     public double FutureToleranceMin { get; init; } = 60;
 }
 
+/// <summary>A rules version and the first day (Czech time) it applies to.</summary>
+public sealed record RulesVersion(string Version, DateOnly From);
+
 /// <summary>Everything the validator needs to know about the challenge.</summary>
+/// <param name="AcceptFrom">First day attempts count (launch). Earlier attempts are rejected.</param>
+/// <param name="Rules">Rules versions; each attempt is judged by the one in force on its start day.</param>
 public sealed record ChallengeConfig(
     Checkpoint Start,
     Checkpoint Peklo,
     Checkpoint Finish,
     ValidationLimits Limits,
-    string? RouteGpx = null)
+    string? RouteGpx = null,
+    DateOnly? AcceptFrom = null,
+    IReadOnlyList<RulesVersion>? Rules = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
