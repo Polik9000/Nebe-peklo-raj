@@ -34,7 +34,7 @@
     "maxPointIntervalS": 60,
     "resumeMaxDistanceM": 100,
     "maxGapHours": 12,
-    "detourReturnToleranceM": 200,
+    "detourReturnToleranceM": 100,
     "shortcutMinSavedM": 150,
     "shortcutWindowS": 120,
     "shortcutPaceTolerance": 1.3,

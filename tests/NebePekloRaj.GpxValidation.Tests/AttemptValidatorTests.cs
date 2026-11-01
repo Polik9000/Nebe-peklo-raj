@@ -26,9 +26,23 @@ public class AttemptValidatorTests
         Approx.Near(TimeSpan.FromSeconds(9_700 / (Kmh / 3.6)).TotalSeconds, r.Elapsed!.Value.TotalSeconds, 100);
         Assert.Equal(2, r.Stages.Count);
         Approx.Near(3_850 / (Kmh / 3.6), r.Stages[0].Elapsed.TotalSeconds, 100);
-        Assert.Equal(r.Elapsed, r.Stages[0].Elapsed + r.Stages[1].Elapsed);
+        // Stage 2 starts on leaving the Peklo zone, so the 300 m across that zone is in the full time only.
+        Approx.Near(5_700 / (Kmh / 3.6), r.Stages[1].Elapsed.TotalSeconds, 100);
+        Approx.Near(300 / (Kmh / 3.6), (r.Elapsed!.Value - r.Stages[0].Elapsed - r.Stages[1].Elapsed).TotalSeconds, 20);
         Approx.Near(LengthM, r.RouteLengthM, 10);
         Assert.True(r.CoveragePercent > 99);
+    }
+
+    [Fact]
+    public void Rest_in_Peklo_counts_for_full_route_but_not_for_stage_2()
+    {
+        var quick = Check(CleanRun());
+        var rested = Check(Walker().Stand(TimeSpan.FromMinutes(1)).Walk(Line(0, 4_000), Kmh)
+            .Stand(TimeSpan.FromHours(2)).Walk(Line(4_000, LengthM), Kmh));
+
+        Assert.Equal(Verdict.Accepted, rested.Verdict);
+        Approx.Near(quick.Elapsed!.Value.TotalSeconds + 7_200, rested.Elapsed!.Value.TotalSeconds, 30);
+        Approx.Near(quick.Stages[1].Elapsed.TotalSeconds, rested.Stages[1].Elapsed.TotalSeconds, 30);
     }
 
     [Fact]
