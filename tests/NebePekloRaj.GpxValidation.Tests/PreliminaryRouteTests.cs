@@ -27,7 +27,7 @@ public class PreliminaryRouteTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full);
 
-        Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+        Assert.True(Review.Problems(r).Count == 0, Review.Describe(r));
         Assert.InRange(r.Elapsed!.Value.TotalHours, 17.5, 18.3); // ~162.6 km at 9 km/h
         Assert.InRange(r.Stages[0].Elapsed.TotalHours, 5.1, 5.5); // ~48 km
         Assert.InRange(r.RecordedDistanceM, 160_500, 163_000); // points every 25 m cut a few corners
@@ -53,7 +53,7 @@ public class PreliminaryRouteTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Stage1);
 
-        Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+        Assert.True(Review.Problems(r).Count == 0, Review.Describe(r));
         Assert.InRange(r.RouteLengthM, 47_700, 48_700);
     }
 
@@ -111,7 +111,7 @@ public class PreliminaryRouteTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
 
-        Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+        Assert.True(Review.Problems(r).Count == 0, Review.Describe(r));
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class PreliminaryRouteTests
 
         var r = Validator().Validate([b.Build()], RouteVariant.Full, new ValidationOptions(IsRecordCandidate: true));
 
-        Assert.True(r.Verdict == Verdict.Accepted, string.Join("\n", r.Findings.Select(f => f.Message)));
+        Assert.True(Review.Problems(r).Count == 0, Review.Describe(r));
     }
 
     [Fact]
